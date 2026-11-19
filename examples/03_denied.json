@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-11-19T09:00:00+09:00",
+  "user_id": "user-demo",
+  "agent_id": "agent-demo",
+  "session_id": "session-demo",
+  "request_id": "00000000-0000-0000-0000-000000000003",
+  "sequence_no": 2,
+  "tool_name": "db.query",
+  "action": "read",
+  "resource": "table:orders",
+  "status": "denied",
+  "duration_ms": 0,
+  "metadata": {},
+  "error_code": "ACCESS_DENIED"
+}

@@ -1,8 +1,14 @@
-# Wrapper가 수집한 원본 로그 (SQL·조회 결과가 들어 있으므로 업로드 금지)
-logs/
-
-node_modules/
-dist/
-*.log
 .env
 .env.*
+!.env.example
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.log
+artifacts/
+.coverage
+# Gateway raw logs may contain SQL and query results.
+logs/
+node_modules/
+dist/
