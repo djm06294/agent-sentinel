@@ -1,0 +1,346 @@
+{
+  "info": {
+    "name": "Agent Sentinel",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "log_id",
+      "value": ""
+    },
+    {
+      "key": "session_id",
+      "value": ""
+    },
+    {
+      "key": "request_id",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Readiness Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/ready"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "01_read",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/logs",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"timestamp\": \"2026-11-19T09:00:00+09:00\",\n  \"user_id\": \"user-demo\",\n  \"agent_id\": \"agent-demo\",\n  \"session_id\": \"{{session_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"sequence_no\": 0,\n  \"tool_name\": \"db.query\",\n  \"action\": \"read\",\n  \"resource\": \"table:orders\",\n  \"status\": \"success\",\n  \"duration_ms\": 12,\n  \"metadata\": {\n    \"result_count\": 3,\n    \"transport\": \"http\",\n    \"resource_type\": \"table\"\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set('session_id', pm.variables.replaceIn('{{$guid}}'));",
+              "pm.collectionVariables.set('request_id', pm.variables.replaceIn('{{$guid}}'));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "if (pm.response.code === 201) { pm.collectionVariables.set('log_id', pm.response.json().data.log_id); pm.collectionVariables.set('saved_data', JSON.stringify(pm.response.json().data)); }"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "02_update",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/logs",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"timestamp\": \"2026-11-19T09:00:00+09:00\",\n  \"user_id\": \"user-demo\",\n  \"agent_id\": \"agent-demo\",\n  \"session_id\": \"{{session_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"sequence_no\": 1,\n  \"tool_name\": \"db.update\",\n  \"action\": \"update\",\n  \"resource\": \"table:orders\",\n  \"status\": \"success\",\n  \"duration_ms\": 12,\n  \"metadata\": {\n    \"rows_affected\": 1\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set('session_id', pm.variables.replaceIn('{{$guid}}'));",
+              "pm.collectionVariables.set('request_id', pm.variables.replaceIn('{{$guid}}'));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "if (pm.response.code === 201) { pm.collectionVariables.set('log_id', pm.response.json().data.log_id); pm.collectionVariables.set('saved_data', JSON.stringify(pm.response.json().data)); }"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "03_denied",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/logs",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"timestamp\": \"2026-11-19T09:00:00+09:00\",\n  \"user_id\": \"user-demo\",\n  \"agent_id\": \"agent-demo\",\n  \"session_id\": \"{{session_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"sequence_no\": 2,\n  \"tool_name\": \"db.query\",\n  \"action\": \"read\",\n  \"resource\": \"table:orders\",\n  \"status\": \"denied\",\n  \"duration_ms\": 0,\n  \"metadata\": {},\n  \"error_code\": \"ACCESS_DENIED\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set('session_id', pm.variables.replaceIn('{{$guid}}'));",
+              "pm.collectionVariables.set('request_id', pm.variables.replaceIn('{{$guid}}'));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "if (pm.response.code === 201) { pm.collectionVariables.set('log_id', pm.response.json().data.log_id); pm.collectionVariables.set('saved_data', JSON.stringify(pm.response.json().data)); }"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "04_not_found",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/logs",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"timestamp\": \"2026-11-19T09:00:00+09:00\",\n  \"user_id\": \"user-demo\",\n  \"agent_id\": \"agent-demo\",\n  \"session_id\": \"{{session_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"sequence_no\": 3,\n  \"tool_name\": \"db.query\",\n  \"action\": \"read\",\n  \"resource\": \"table:missing\",\n  \"status\": \"failure\",\n  \"duration_ms\": 12,\n  \"metadata\": {},\n  \"error_code\": \"RESOURCE_NOT_FOUND\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set('session_id', pm.variables.replaceIn('{{$guid}}'));",
+              "pm.collectionVariables.set('request_id', pm.variables.replaceIn('{{$guid}}'));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "if (pm.response.code === 201) { pm.collectionVariables.set('log_id', pm.response.json().data.log_id); pm.collectionVariables.set('saved_data', JSON.stringify(pm.response.json().data)); }"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "05_tool_error",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/logs",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"timestamp\": \"2026-11-19T09:00:00+09:00\",\n  \"user_id\": \"user-demo\",\n  \"agent_id\": \"agent-demo\",\n  \"session_id\": \"{{session_id}}\",\n  \"request_id\": \"{{request_id}}\",\n  \"sequence_no\": 4,\n  \"tool_name\": \"db.query\",\n  \"action\": \"read\",\n  \"resource\": \"table:orders\",\n  \"status\": \"failure\",\n  \"duration_ms\": 3000,\n  \"metadata\": {\n    \"retry_count\": 1\n  },\n  \"error_code\": \"TOOL_TIMEOUT\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set('session_id', pm.variables.replaceIn('{{$guid}}'));",
+              "pm.collectionVariables.set('request_id', pm.variables.replaceIn('{{$guid}}'));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+              "if (pm.response.code === 201) { pm.collectionVariables.set('log_id', pm.response.json().data.log_id); pm.collectionVariables.set('saved_data', JSON.stringify(pm.response.json().data)); }"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Read saved log",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/api/v1/logs/{{log_id}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+              "pm.test('Stored data matches', () => pm.expect(pm.response.json().data).to.deep.equal(JSON.parse(pm.collectionVariables.get('saved_data'))));"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Invalid request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/api/v1/logs",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"duration_ms\": -1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 422', () => pm.response.to.have.status(422));"
+            ]
+          }
+        }
+      ],
+      "response": []
+    }
+  ]
+}

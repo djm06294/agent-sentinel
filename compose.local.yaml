@@ -1,0 +1,5 @@
+# Optional: expose DB only for local Python development.
+services:
+  log-db:
+    ports:
+      - "127.0.0.1:5432:5432"
