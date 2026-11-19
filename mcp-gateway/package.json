@@ -1,0 +1,25 @@
+{
+  "name": "agent-sentinel-mcp-gateway",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DBHub 앞단에서 MCP 메시지를 중계하는 Wrapper (Claude Code ↔ Wrapper ↔ DBHub)",
+  "type": "module",
+  "bin": {
+    "agent-sentinel-mcp-gateway": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js --transport stdio",
+    "start:demo": "node dist/index.js --transport stdio --demo"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "dependencies": {
+    "@bytebase/dbhub": "1.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "typescript": "5.9.3"
+  }
+}
