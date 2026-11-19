@@ -6,7 +6,7 @@ type Message = Record<string, any>;
 export interface BehaviorEvent {
   timestamp: string; user_id: string; agent_id: string; session_id: string;
   request_id: string; sequence_no: number; tool_name: string; action: string;
-  resource: string; status: 'success' | 'failure'; duration_ms: number;
+  resource: string; status: 'success' | 'failure' | 'denied'; duration_ms: number;
   error_code: string | null;
   metadata: { transport: 'stdio'; resource_type: 'service' };
 }
@@ -152,12 +152,16 @@ export class BehaviorLogger {
       this.finish(key, error);
     }
   }
-  private finish(key: string, error: string | null): void {
+  /** 정책에 의해 차단된 호출 (DBHub로 보내지 않음). error_code에 차단 사유를 남긴다. */
+  deny(id: string | number, reason: string): void {
+    this.finish(JSON.stringify(id), reason, 'denied');
+  }
+  private finish(key: string, error: string | null, outcome: 'failure' | 'denied' = 'failure'): void {
     const call = this.pending.get(key);
     if (!call) return;
     this.pending.delete(key);
     call.event.duration_ms = Math.min(2147483647, Math.max(0, Math.round(performance.now() - call.started)));
-    call.event.status = error ? 'failure' : 'success';
+    call.event.status = error ? outcome : 'success';
     call.event.error_code = error;
     this.outbox.enqueue(call.event);
   }
