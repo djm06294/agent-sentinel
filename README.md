@@ -4,6 +4,7 @@ AI 에이전트 행동 기록을 위한 MCP Gateway와 로그 수신 서비스�
 
 - `mcp-gateway/`: 팀원의 DBHub 중계·원본 로그 수집 구성요소. [Gateway 실행 안내](mcp-gateway/README.md).
 - `app/`: 서영의 HTTP 로그 수신·검증·PostgreSQL 저장·단건 조회 서비스.
+- `admin-backend/`: 주영의 관리자 백엔드. 사용자·에이전트·대상 서버·접근 정책 관리와 정책 확인 API(:8001, control_db). [실행 안내](admin-backend/README.md).
 - Gateway의 tools/call 결과가 로그 수신 API를 통해 PostgreSQL에 자동 저장된다. [통합 실행 안내](docs/GATEWAY_PIPELINE.md).
 - [서영 배정 업무 및 완료 현황](docs/SEOYOUNG_WORK.md). 아래 실행 절차는 로그 수신 서비스 기준이다.
 

@@ -32,5 +32,40 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+  # 관리자 백엔드(정책·사용자·에이전트·서버 관리)와 control_db. 로그 DB와 분리한다.
+  control-db:
+    image: postgres:17.5-bookworm
+    environment:
+      POSTGRES_DB: ${CONTROL_POSTGRES_DB:-control_db}
+      POSTGRES_USER: ${CONTROL_POSTGRES_USER:-sentinel_admin}
+      POSTGRES_PASSWORD: ${CONTROL_POSTGRES_PASSWORD:-${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}}
+    volumes:
+      - control-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+  admin-api:
+    build: ./admin-backend
+    environment:
+      ADMIN_DB_NAME: ${CONTROL_POSTGRES_DB:-control_db}
+      ADMIN_DB_USER: ${CONTROL_POSTGRES_USER:-sentinel_admin}
+      ADMIN_DB_PASSWORD: ${CONTROL_POSTGRES_PASSWORD:-${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}}
+      ADMIN_DB_HOST: control-db
+      ADMIN_DB_PORT: 5432
+    ports:
+      - "127.0.0.1:8001:8001"
+    depends_on:
+      control-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/ready', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 volumes:
   log-data:
+  control-data:
