@@ -7,6 +7,7 @@
 //   3_dbhub-responses.jsonl  DBHub -> Claude Code : DBHub가 돌려준 결과·오류
 //   4_dbhub-stderr.log       DBHub 프로세스 자체 출력 (시작 배너, 연결 오류 등)
 //   5_postgres.log           PostgreSQL 서버 로그 (docker logs, GATEWAY_PG_CONTAINER 지정 시)
+//   6_policy-decisions.jsonl 정책 확인 결과 (허용·차단, policy_id, 사유) (GATEWAY_POLICY_API_URL 지정 시)
 import { spawn, type ChildProcess } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { appendFileSync, mkdirSync, renameSync, writeFileSync } from 'node:fs';
@@ -63,6 +64,11 @@ export class RawLogger {
     }
     const file = direction === 'client_to_server' ? '2_client-requests.jsonl' : '3_dbhub-responses.jsonl';
     this.append(file, JSON.stringify({ ts: new Date().toISOString(), msg }) + '\n');
+  }
+
+  /** 정책 확인 결과 (tools/call 1건당 1줄). 차단 시 DBHub 대신 Gateway가 보낸 응답도 함께 남긴다. */
+  policy(entry: Record<string, unknown>): void {
+    this.append('6_policy-decisions.jsonl', JSON.stringify({ ts: new Date().toISOString(), ...entry }) + '\n');
   }
 
   dbhubStderr(chunk: Buffer): void {

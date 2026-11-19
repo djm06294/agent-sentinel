@@ -46,7 +46,7 @@ Gateway는 Python용 .env를 자동 로드하지 않는다. 실행 터미널이�
 - 성공 응답은 success. JSON-RPC 오류, isError, DBHub success=false는 failure와 고정 오류 코드로 기록한다.
 - 응답을 120초간 받지 못하면 MCP_RESPONSE_TIMEOUT, 종료 시 미응답 호출은 MCP_SESSION_ENDED로 기록한다. 이는 관측 실패이며 실제 DB 작업의 성공·실패를 확정하지 않는다. 뒤늦은 응답으로 해당 이벤트를 수정하지 않는다.
 - metadata는 transport=stdio, resource_type=service만 포함한다. SQL, 인수, 결과 행, 오류 메시지 원문은 전송하지 않는다.
-- 정책 엔진이 없으므로 denied를 임의 판정하지 않는다.
+- 정책 확인(GATEWAY_POLICY_API_URL 지정 시)에서 차단된 호출은 DBHub로 보내지 않고 status=denied, error_code=차단 사유(NO_MATCHING_POLICY, POLICY_DENY, USER_INACTIVE, POLICY_UNAVAILABLE 등)로 기록한다. duration_ms는 정책 확인에 걸린 시간이다. 자세한 동작은 mcp-gateway/README.md의 "정책 확인".
 
 ## 전송·실패 처리
 
@@ -60,7 +60,7 @@ Gateway는 Python용 .env를 자동 로드하지 않는다. 실행 터미널이�
 - 정상 종료 시 최대 약 5초간 전송하고 남은 파일은 유지한다. 응답 전 강제 종료된 호출은 메모리에만 있으므로 복구되지 않는다.
 - 동시에 추적하는 미응답 호출은 최대 1000개이며 초과 시 stderr 경고 후 해당 호출 기록을 생략한다.
 
-logs/ 및 전송 대기 파일은 Git 제외 대상이다. 기존 원본 로그 파일은 SQL·결과 원문을 포함할 수 있으므로 별도 관리가 필요하다. API 인증·TLS·정책 판정은 이번 구현 범위가 아니다.
+logs/ 및 전송 대기 파일은 Git 제외 대상이다. 기존 원본 로그 파일은 SQL·결과 원문을 포함할 수 있으므로 별도 관리가 필요하다. API 인증·TLS는 이번 구현 범위가 아니다.
 
 ## 검증
 
