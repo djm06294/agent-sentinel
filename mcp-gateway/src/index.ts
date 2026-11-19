@@ -2,7 +2,7 @@
 // MCP Gateway (Wrapper) v0.1
 // Claude Code <-(stdio)-> Wrapper <-(stdio)-> DBHub
 //
-// 현재 단계: 메시지를 그대로 중계하면서 원본 로그만 파일로 남긴다 (정책 검사 없음).
+// 원본 MCP 메시지 중계 + tools/call 결과를 HTTP 로그 서버로 자동 전송 (정책 검사 없음).
 // stdout은 MCP JSON-RPC 전용 채널이므로 Wrapper 자체 출력은 반드시 stderr로만 보낸다.
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
@@ -10,6 +10,8 @@ import { dirname, join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 import { RawLogger, type Direction, type EndReason } from './raw-logger.js';
+
+import { BehaviorLogger, EventOutbox } from './behavior-logger.js';
 
 const require = createRequire(import.meta.url);
 
@@ -36,6 +38,18 @@ if (process.env.GATEWAY_PG_CONTAINER) {
 }
 logInfo(`session_id=${rawLogger.sessionId}, 로그 저장 위치: ${rawLogger.dir}`);
 
+// Default identity is a local label, not an authenticated user identity.
+const behaviorLogger = process.env.GATEWAY_LOG_ENABLED === 'false' ? undefined : new BehaviorLogger(
+  rawLogger.sessionId,
+  process.env.GATEWAY_USER_ID ?? 'local-user',
+  process.env.GATEWAY_AGENT_ID ?? 'dbhub-agent',
+  new EventOutbox({
+    url: process.env.GATEWAY_LOG_API_URL ?? 'http://127.0.0.1:8000/api/v1/logs',
+    dir: process.env.GATEWAY_OUTBOX_DIR ?? join(logDir, 'behavior-outbox'),
+    report: logInfo,
+  }),
+  logInfo,
+);
 const child = spawn(process.execPath, [resolveDbhubEntry(), ...dbhubArgs], {
   stdio: ['pipe', 'pipe', 'pipe'],
   env: process.env,
@@ -50,7 +64,7 @@ child.stderr.on('data', (chunk: Buffer) => {
 // MCP stdio 전송은 메시지 1개 = JSON 1줄이므로 줄 단위로 중계한다
 function forward(direction: Direction, line: string): void {
   rawLogger.message(direction, line);
-  // TODO(T-03): Event Logger - 요청·응답을 짝지어 agent_event_log 스키마(00번 4절)로 기록
+  behaviorLogger?.observe(direction, line);
   // TODO(T-06): Policy Client - client_to_server의 tools/call은 정책 확인 후 전달/차단
   const target = direction === 'client_to_server' ? child.stdin : process.stdout;
   target.write(line + '\n');
@@ -79,19 +93,25 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   });
 }
 
-child.on('error', (err) => {
-  logInfo(`DBHub 실행 실패: ${err.message}`);
-  rawLogger.close(null, 'dbhub_spawn_error');
-  process.exit(1);
+let finishing = false;
+async function finish(code: number | null): Promise<void> {
+  if (finishing) return;
+  finishing = true;
+  await behaviorLogger?.close();
+  // Allow the optional PostgreSQL log follower to collect its final lines.
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  rawLogger.close(code, endReason);
+  process.exit(code ?? 1);
+}
+
+child.on('error', () => {
+  logInfo('DBHub 실행 실패');
+  endReason = 'dbhub_spawn_error';
+  void finish(1);
 });
 
-child.on('exit', (code, signal) => {
-  if (code !== 0) {
-    logInfo(`DBHub 종료 (code=${code}, signal=${signal})`);
-  }
-  // docker logs가 마지막 PostgreSQL 로그를 따라잡을 시간을 잠깐 준다
-  setTimeout(() => {
-    rawLogger.close(code, endReason);
-    process.exit(code ?? 1);
-  }, 1000);
+// close fires after stdout is drained, so the last tool result is recorded before shutdown.
+child.on('close', (code, signal) => {
+  if (code !== 0) logInfo(`DBHub 종료 (code=${code}, signal=${signal})`);
+  void finish(code);
 });
