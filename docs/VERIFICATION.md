@@ -63,3 +63,36 @@ SELECT는 log-db 컨테이너의 psql로 실행하여 API 응답과 별도로 �
 - Postman 데스크톱 앱의 GUI Runner는 실행하지 않았다. Collection 원본과 사전/검증 스크립트를 Newman으로 실제 실행했다.
 - 재시작 후 데이터 유지는 확인했다. 컨테이너 삭제·재생성, 호스트 재부팅, 백업 복구, 부하 및 운영 보안 검증은 수행하지 않았다.
 - 해당 검증 작업에서는 기존 .env 덮어쓰기, DB 볼륨 삭제, Git commit/push를 수행하지 않았다. 테스트 DB와 개발 합성 로그는 보존했다.
+
+## 팀원 Gateway 반영 후 독립 실행 검증 (2026-11-19)
+
+- 작업 브랜치: feat/log-service-on-gateway. 팀원 main f767828 기반에 로그 서버 추가.
+- Node.js v24.20.0에서 mcp-gateway의 npm ci 및 npm run build 성공.
+- 로컬 검증 클라이언트로 Gateway를 --transport stdio --demo 모드에서 실행.
+- MCP initialize 성공: DBHub MCP Server 1.5.0.
+- tools/list에서 execute_sql, search_objects 확인.
+- tools/call로 SELECT 1 AS verification_value 실행, 결과 1 확인.
+- 원본 요청·응답 JSONL 기록 및 세션 종료 시각, 종료 코드 0 확인. logs/verification/에 생성한 검증 로그는 Git 제외.
+- 검증용 Gateway는 종료했다. Claude Code 등록은 수행하지 않았다.
+- 기존 Docker 로그 서버: 단위 테스트 28 passed, PostgreSQL 통합 테스트 1 passed. API와 DB 모두 healthy.
+- Gateway와 로그 수신 API 사이 자동 전송 연동 및 실제 업무 PostgreSQL 연결은 이번에 검증하지 않았다. Gateway는 내장 데모 DB를 사용했다.
+- npm audit에서 전이 의존성 hono, @hono/node-server에 moderate 등급 패키지 2개 보고. 자동 업데이트는 수행하지 않았으며 해결 완료로 간주하지 않는다.
+- npm 설치에서 cpu-features, oracledb, ssh2 설치 스크립트 승인 관련 경고 발생. 데모 검증은 통과했으나 Oracle/SSH 등의 선택 기능은 검증하지 않았다.
+- 기존 Python 테스트의 사용 중단 예고 및 통합 테스트 캐시 권한 경고는 남아 있다.
+- 이번 검증에서는 Git 커밋·푸시를 수행하지 않았다.
+
+## Gateway → HTTP API → PostgreSQL 자동 저장 추가 검증
+
+앞선 독립 실행 단계 이후 자동 전송 기능을 구현했다. 아래 결과가 최신 연동 상태다.
+
+- npm --prefix mcp-gateway test: 3개 통과. 응답 순서/ID 매칭, 민감 원문 제외, 오류·미응답, API 장애·디스크 재시도·409·422 처리 확인.
+- tools/verify_gateway_pipeline.py: 실제 Gateway tools/call → POST API → PostgreSQL → GET/SQL 전체 필드 대조 성공.
+- 정상 SQL 실행 success 및 존재하지 않는 테이블 조회 failure 각각 저장.
+- 마지막 검증 session_id: 30539a8c-b901-4ae7-b2a0-ccc58c573144.
+- success log_id: 9ea21c5f-a99b-4c55-a3c6-f632460f5e00.
+- failure log_id: a69baf03-09b9-42f2-91e8-0b0d01af67da.
+- 정상 SQL의 고유 테스트 문자열이 저장 DB 데이터에 포함되지 않음 확인.
+- 저장된 이벤트의 디스크 재전송을 새 Gateway 프로세스로 실행: 409 및 동일 세션 행 수 2 유지 확인.
+- 두 차례 실제 실행에서 합성 로그 총 4건 추가, 삭제하지 않음.
+- 업무 SQL 대상은 DBHub SQLite 데모 DB, 로그 저장은 실제 Docker PostgreSQL. Claude Code UI 등록 및 실제 업무 PostgreSQL 연결은 미검증.
+- Gateway 테스트 프로세스는 종료. 로그 API/DB는 유지. 기존 의존성 경고는 앞 절과 같으며 해결됐다고 주장하지 않음.

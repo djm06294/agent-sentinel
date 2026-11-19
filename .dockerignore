@@ -1,7 +1,13 @@
 .git
 .env
+.env.*
+!.env.example
 .venv
-__pycache__
+**/__pycache__
 .pytest_cache
 artifacts
 *.log
+logs/
+mcp-gateway/
+**/node_modules
+**/dist

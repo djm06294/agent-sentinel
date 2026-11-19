@@ -6,10 +6,10 @@ Claude Code와 DBHub 사이에서 MCP 메시지를 중계하는 Wrapper입니다
 [ Claude Code ] ⇄ (stdio) ⇄ [ MCP Gateway ] ⇄ (stdio) ⇄ [ DBHub 1.5.0 ] ⇄ (SQL) ⇄ [ PostgreSQL ]
 ```
 
-- **현재 단계 (v0.1)**: 메시지를 그대로 전달하면서 원본 로그만 파일로 남깁니다. 정책 검사는 아직 없습니다.
+- **현재 단계**: 원본 MCP 중계·파일 로그를 유지하면서 tools/call 결과를 HTTP 로그 서버에 자동 전송합니다. 정책 검사는 아직 없습니다.
 - DBHub는 수정하지 않고 `package.json`에 버전을 고정(`1.5.0`)해 의존성으로 사용합니다.
 - Wrapper에 준 인자(`--transport`, `--dsn`, `--config`, `--demo` 등)는 DBHub에 그대로 전달됩니다.
-- 다음 단계(로그 저장, 정책 확인)를 넣을 위치는 `src/index.ts`의 `forward()` 안 TODO 주석으로 표시해 두었습니다.
+- `src/behavior-logger.ts`가 요청·응답 매칭, 스키마 변환, 디스크 대기열과 HTTP 전송을 담당합니다. 정책 확인은 아직 TODO입니다.
 
 ## 요구 사항
 
@@ -90,3 +90,15 @@ SELECT pg_reload_conf();
 
 - stdout은 MCP JSON-RPC 전용입니다. Wrapper에서 디버그 출력이 필요하면 반드시 **stderr**로 보내야 합니다 (stdout에 섞이면 연결이 깨집니다).
 - 스펙: `10_MCP서버.md` (T-01 ~ T-09), 데이터 형식: `00_공통_인터페이스.md`
+
+## 행동 로그 서버 자동 저장
+
+기본값으로 http://127.0.0.1:8000/api/v1/logs 에 tools/call 결과를 전송합니다. 먼저 루트의 Docker Compose 로그 서버를 실행하세요. 원본 SQL이나 조회 결과를 이 API로 전송하지 않습니다.
+
+설정, 필드 매핑, 재시도 정책 및 실제 통합 검증 명령: [GATEWAY_PIPELINE.md](../docs/GATEWAY_PIPELINE.md).
+
+```powershell
+npm test
+```
+
+원본 파일 기록만 필요하면 실행 환경에 GATEWAY_LOG_ENABLED=false를 설정합니다. Gateway는 stdin/stdout 기반 MCP 프로세스이므로 일반 터미널에서 start:demo를 실행하는 것만으로 도구 호출이 발생하지는 않습니다. MCP 클라이언트 또는 통합 검증 스크립트로 호출해야 합니다.
