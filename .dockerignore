@@ -11,3 +11,4 @@ logs/
 mcp-gateway/
 **/node_modules
 **/dist
+admin-backend/
