@@ -1,0 +1,8 @@
+# Wrapper가 수집한 원본 로그 (SQL·조회 결과가 들어 있으므로 업로드 금지)
+logs/
+
+node_modules/
+dist/
+*.log
+.env
+.env.*
