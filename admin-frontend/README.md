@@ -24,7 +24,11 @@
 
 ## 실행
 
-먼저 관리자 백엔드를 띄웁니다 (`admin-backend/README.md`).
+먼저 관리자 백엔드를 띄웁니다. 저장소 루트에서 Docker Compose로 띄우는 게 가장 간단합니다 (`.env`에 `CONTROL_POSTGRES_PASSWORD` 또는 `POSTGRES_PASSWORD` 필요). 직접 실행은 `admin-backend/README.md`를 봅니다.
+
+```powershell
+docker compose up -d control-db admin-api   # http://127.0.0.1:8001
+```
 
 ```powershell
 cd admin-frontend
